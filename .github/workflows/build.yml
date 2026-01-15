@@ -1,0 +1,42 @@
+name: Android APK Builder Server
+
+on:
+  repository_dispatch:
+    types: [build_apk]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 저장소 체크아웃
+      uses: actions/checkout@v4
+
+    - name: ☕ JDK 17 설치
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: 📦 Android SDK 설치
+      uses: android-actions/setup-android@v3
+
+    - name: 📂 프로젝트 압축 해제
+      run: |
+        unzip project.zip -d project
+
+    - name: 🔧 Gradle 실행 권한
+      run: |
+        cd project
+        chmod +x gradlew
+
+    - name: 🏗️ APK 빌드
+      run: |
+        cd project
+        ./gradlew assembleDebug --stacktrace
+
+    - name: 📤 APK 업로드
+      uses: actions/upload-artifact@v4
+      with:
+        name: output-apk
+        path: project/app/build/outputs/apk/debug/*.apk
