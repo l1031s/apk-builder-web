@@ -9,35 +9,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 저장소 체크아웃
-      uses: actions/checkout@v4
+      - name: 📥 ZIP 다운로드
+        run: |
+          curl -L "${{ github.event.client_payload.zip_url }}" -o project.zip
+          unzip project.zip -d project
 
-    - name: 📦 프로젝트 ZIP 다운로드
-      run: |
-        curl -L "${{ github.event.client_payload.zip_url }}" -o project.zip
-        unzip project.zip -d project
+      - name: ☕ JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-    - name: ☕ JDK 17 설치
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: 17
+      - name: 📱 Android SDK
+        uses: android-actions/setup-android@v3
 
-    - name: 📱 Android SDK 설치
-      uses: android-actions/setup-android@v3
+      - name: 🔧 Gradle 권한
+        run: |
+          cd project
+          chmod +x gradlew
 
-    - name: 🔧 Gradle 실행 권한
-      run: |
-        cd project
-        chmod +x gradlew
+      - name: 🏗️ APK 빌드
+        run: |
+          cd project
+          ./gradlew assembleDebug
 
-    - name: 🏗️ APK 빌드
-      run: |
-        cd project
-        ./gradlew assembleDebug
-
-    - name: 📤 APK 업로드
-      uses: actions/upload-artifact@v4
-      with:
-        name: output-apk
-        path: project/**/build/outputs/apk/**/*.apk
+      - name: 📦 APK 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-apk
+          path: project/**/build/outputs/apk/**/*.apk
