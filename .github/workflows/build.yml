@@ -23,18 +23,29 @@ jobs:
       - name: 📱 Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: 🔐 Keystore 복원
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my-release-key.jks
+
+      - name: 📝 서명 정보 설정
+        run: |
+          echo "RELEASE_STORE_FILE=my-release-key.jks" >> project/gradle.properties
+          echo "RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> project/gradle.properties
+          echo "RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> project/gradle.properties
+          echo "RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> project/gradle.properties
+
       - name: 🔧 Gradle 권한
         run: |
           cd project
           chmod +x gradlew
 
-      - name: 🏗️ APK 빌드
+      - name: 🏗️ APK 빌드 (Release)
         run: |
           cd project
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
       - name: 📦 APK 업로드
         uses: actions/upload-artifact@v4
         with:
-          name: output-apk
-          path: project/**/build/outputs/apk/**/*.apk
+          name: signed-apk
+          path: project/app/build/outputs/apk/release/*.apk
